@@ -1,0 +1,84 @@
+<?php
+$_helper = Mage::helper('inchoo_dealer');
+$_searchType = $_helper->getSearchTypeBoxDefault();
+
+$_isSearchByZipEnabled = $_helper->getIsSearchByZipEnabled();
+$_isSearchByStateEnabled = $_helper->getIsSearchByStateEnabled();
+$_isSearchByCompanyEnabled = $_helper->getIsSearchByCompanyEnabled();
+
+$_searchTypeZip = $_helper->getSearchTypeZip();
+$_searchTypeState = $_helper->getSearchTypeState();
+$_searchTypeCompany = $_helper->getSearchTypeCompany();
+
+$_typeTitle = '';
+
+if ($_searchType == $_searchTypeZip) {
+    $_typeTitle = $_helper->__('Search by ZIP:');
+} else if ($_searchType == $_searchTypeState) {
+    $_typeTitle = $_helper->__('Search by State:');
+} else if ($_searchType == $_searchTypeCompany) {
+    $_typeTitle = $_helper->__('Search by Company:');
+}
+?>
+
+<?php
+if (($_searchType == $_searchTypeZip && $_isSearchByZipEnabled) ||
+        ($_searchType == $_searchTypeState && $_isSearchByStateEnabled) ||
+        ($_searchType == $_searchTypeCompany && $_isSearchByCompanyEnabled)) {
+    ?>
+
+    <div class="inchoo_dealer-box">
+        <div class="block-title">
+            <strong><span><?php echo $_helper->__('Dealer Locator') ?></span></strong>
+        </div>
+        <form action="<?php echo $this->getFormAction(); ?>" id="dealerLocatorSeach" method="get">
+            <div class="block-content">
+
+                <div class="form-inchoo_dealer-box-header">
+                    <label for="newsletter"><?php echo $_typeTitle; ?></label>
+                </div>
+
+                <input type="hidden" name="search_type" id="search_type" class="required-entry input-text" value="<?php echo $_searchType; ?>"/>
+                <input type="hidden" name="radius" id="radius" class="required-entry input-text" value="0"/>
+
+                <?php if ($_searchType == $_searchTypeZip) { ?>
+                    <div class="input-box">
+                        <input type="text" name="<?php echo $_searchType ?>" id="<?php echo $_searchType ?>" title="<?php echo $_typeTitle; ?>" class="required-entry input-text"/>
+                    </div>
+                    <div class="input-box">
+                        <select type="text" name="radius" id="radius" title="<?php echo $_helper->__('ZIP/Postcode/City') ?>" class="input-text">
+                            <?php $_options = $_helper->getSearchRadiusOptions(); ?>
+                            <?php foreach ($_options as $_option): ?>
+                                <?php $_title = ($_option == '0') ? $_helper->__('Any Distance') : sprintf('%s %s', $_option, $_helper->__('miles')); ?>
+                                <option value="<?php echo $_option; ?>" <?php if ($_radius == $_option): ?>selected="selected"<?php endif; ?>><?php echo $_title ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                <?php } else if ($_searchType == $_searchTypeState) { ?>
+                    <div class="input-box">
+                        <select type="text" name="state" id="state" title="<?php echo $_helper->__('State') ?>" class="input-text">
+                            <?php $regions = $_helper->getDealerRegions(); ?>
+                            <?php foreach ($regions as $region): ?>
+                                <option value="<?php echo $region ?>"><?php echo $region ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                <?php } else if ($_searchType == $_searchTypeCompany) { ?>
+                    <div class="input-box">
+                        <select type="text" name="company" id="company" title="<?php echo $_helper->__('Company') ?>" class="input-text">
+                            <?php $companies = $_helper->getDealerCompanies(); ?>
+                            <?php foreach ($companies as $company): ?>
+                                <option value="<?php echo $company ?>"><?php echo $company ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                <?php } ?>
+
+                <div class="actions">
+                    <input type="text" name="hideit" id="hideit" value="" style="display:none !important;" />
+                    <button type="submit" title="<?php echo $_helper->__('Search') ?>" class="button"><span><span><?php echo $_helper->__('Search') ?></span></span></button>
+                </div>
+            </div>
+        </form>
+    </div>
+<?php } ?>

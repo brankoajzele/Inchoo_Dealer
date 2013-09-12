@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+
+<config>
+    <acl>
+        <resources>
+            <admin>
+                <children>
+                    <system>
+                        <children>
+                            <config>
+                                <children>
+                                    <inchoo_dealer_config translate="title" module="inchoo_dealer">
+                                        <title>Inchoo Dealer Locator Config</title>
+                                    </inchoo_dealer_config>
+                                </children>
+                            </config>
+                        </children>                      
+                    </system>
+                </children>
+            </admin>
+        </resources>
+    </acl>
+</config>

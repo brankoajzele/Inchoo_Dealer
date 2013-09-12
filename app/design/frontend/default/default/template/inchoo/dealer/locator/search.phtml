@@ -1,0 +1,458 @@
+<?php $_helper = Mage::helper('inchoo_dealer') ?>
+<div id="messages_product_view"><?php echo $this->getMessagesBlock()->getGroupedHtml() ?></div>
+<div class="page-title">
+    <h1><?php echo $_helper->__('Dealer Locator') ?></h1>
+</div>
+
+<?php
+$_searchTypeZip = $_helper->getSearchTypeZip();
+$_searchTypeState = $_helper->getSearchTypeState();
+$_searchTypeCompany = $_helper->getSearchTypeCompany();
+
+$_isSearchByZipEnabled = $_helper->getIsSearchByZipEnabled();
+$_isSearchByStateEnabled = $_helper->getIsSearchByStateEnabled();
+$_isSearchByCompanyEnabled = $_helper->getIsSearchByCompanyEnabled();
+
+/*
+ * Fetch all registry paramters.
+ */
+$_dealers = Mage::registry('dealer_search_result');
+$_lat = Mage::registry('dealer_search_center_lat');
+$_lon = Mage::registry('dealer_search_center_lon');
+$_searchRequest = Mage::registry('dealer_search_request');
+
+$_searchType = $_searchRequest->getParam('search_type', false);
+$_state = $_searchRequest->getParam($_searchTypeState, false);
+$_company = $_searchRequest->getParam($_searchTypeCompany, false);
+$_zip = $_searchRequest->getParam($_searchTypeZip, false);
+$_radioType = 'radio';
+$_hiddenType = 'hidden';
+$_radius = '';
+$_zoom = 3;
+
+if (!$_searchType) {
+    if ($_isSearchByZipEnabled) {
+        $_searchType = $_searchTypeZip;
+    } else if ($_isSearchByStateEnabled) {
+        $_searchType = $_searchTypeState;
+    } else if ($_isSearchByCompanyEnabled) {
+        $_searchType = $_searchTypeCompany;
+    }
+}
+
+if ($_searchType == $_searchTypeZip) {
+    $_radius = $_searchRequest->getParam('radius', false);
+
+    if (!$_radius && $_radius !== 0) {
+        $_radius = $_helper->getSearchRadiusOptionDefault();
+    }
+
+    /*
+     * Convertion from miles to meters
+     */
+    $_round = $_radius * 1609.344;
+}
+
+/*
+ * Default USA center coordinates.
+ */
+if (!$_lat || !$_lon) {
+    $_lat = 37.09024;
+    $_lon = -95.712891;
+}
+
+/*
+ * If there is just one location set it as map center
+ * and increase zoom level.
+ */
+if (sizeof($_dealers) == 1) {
+    $_centerLat = $_dealers->getLastItem()->getInchooGeoLatitude();
+    $_centerLon = $_dealers->getLastItem()->getInchooGeoLongitude();
+    $_zoom = $_zoom * 2;
+} else {
+    $_centerLat = $_lat;
+    $_centerLon = $_lon;
+}
+
+if (!$_centerLat || !$_centerLon) {
+    $_centerLat = 0;
+    $_centerLon = 0;
+}
+?>
+<div class="dealer_locator">
+    <form action="<?php echo $this->getFormAction(); ?>" id="dealerLocatorSeach" method="get">
+
+        <?php if ($_isSearchByZipEnabled) { ?>
+            <?php $_zipInputType = ($_isSearchByStateEnabled || $_isSearchByCompanyEnabled) ? $_radioType : $_hiddenType; ?>
+            <div class="fieldset">
+                <h2 class="legend"><?php echo $this->__('Find a dealer') ?></h2>
+                <div class="check_field">
+
+                    <label for="search_type_zip"><?php echo $_helper->__('Search by ZIP/Postcode/City') ?></label>
+                    <div class="check-search-type">
+                        <input type="<?php echo $_zipInputType; ?>" name="search_type" id="search_type_zip" value="<?php echo $_searchTypeZip ?>" <?php if ($_searchType == $_searchTypeZip): ?>checked="true"<?php endif; ?> />
+                    </div>
+                </div>
+            <?php } ?>
+
+            <?php if ($_isSearchByStateEnabled) { ?>
+                <?php $_stateInputType = ($_isSearchByZipEnabled || $_isSearchByCompanyEnabled) ? $_radioType : $_hiddenType; ?>
+                <div class="check_field">
+                    <label for="search_type_state"><?php echo $_helper->__('Search by State') ?></label>
+                    <div class="check-search-type">
+                        <input type="<?php echo $_stateInputType; ?>" name="search_type" id="search_type_state" value="<?php echo $_searchTypeState ?>" <?php if ($_searchType == $_searchTypeState): ?>checked="true"<?php endif; ?> />
+                    </div>
+                </div>
+            <?php } ?>
+
+            <?php if ($_isSearchByCompanyEnabled) { ?>
+                <?php $_companyInputType = ($_isSearchByZipEnabled || $_isSearchByStateEnabled) ? $_radioType : $_hiddenType; ?>
+                <div class="check_field">
+                    <label for="search_type_company"><?php echo $_helper->__('Search by Company') ?></label>
+                    <div class="check-search-type">
+                        <input type="<?php echo $_companyInputType; ?>" name="search_type" id="search_type_company" value="<?php echo $_searchTypeCompany ?>" <?php if ($_searchType == $_searchTypeCompany): ?>checked="true"<?php endif; ?> />
+                    </div>
+                </div>
+            <?php } ?>
+
+
+
+            <?php if ($_isSearchByZipEnabled) { ?>
+                <div id="area_searchByZip">
+                    <ul class="form-list">
+                        <li class="fields">
+                            <div class="field">
+                                <label for="zip" class="required"><em>*</em><?php echo $_helper->__('ZIP/Postcode/City') ?></label>
+                                <div class="input-box">
+                                    <input type="text" name="zip" id="zip" title="<?php echo $_helper->__('ZIP/Postcode/City') ?>" class="required-entry input-text" value="<?php echo $_zip; ?>"/>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label for="radius"><?php echo $_helper->__('Distance radius') ?></label>
+                                <div class="input-box">
+                                    <select type="text" name="radius" id="radius" title="<?php echo $_helper->__('Distance radius') ?>" data-placeholder="Choose a Country..." class="chzn-select" style="width:350px;" tabindex="2">
+                                        <?php $_options = $_helper->getSearchRadiusOptions(); ?>
+                                        <?php foreach ($_options as $_option): ?>
+                                            <?php $_title = ($_option == '0') ? $_helper->__('Any Distance') : sprintf('%s %s', $_option, $_helper->__('miles')); ?>
+                                            <option value="<?php echo $_option; ?>" <?php if ($_radius == $_option): ?>selected="selected"<?php endif; ?>><?php echo $_title ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            <?php } ?>
+
+            <?php if ($_isSearchByStateEnabled) { ?>
+                <div id="area_searchByState" style="display: none;">
+                    <ul class="form-list">
+                        <li class="fields">
+                            <label for="state" class="required"><em>*</em><?php echo $_helper->__('State') ?></label>
+                            <div class="input-box">
+                                <select  type="text" name="state" id="state" title="<?php echo $_helper->__('State') ?>" data-placeholder="Choose a Country..." class="chzn-select" style="width:350px;" tabindex="2">
+                                    <?php $regions = $_helper->getDealerRegions(); ?>
+                                    <?php foreach ($regions as $region): ?>
+                                        <option value="<?php echo $region ?>" <?php if ($_state == $region): ?>selected="selected"<?php endif; ?> ><?php echo $region ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+
+            <?php } ?>
+
+            <?php if ($_isSearchByCompanyEnabled) { ?>
+                <div id="area_searchByCompany" style="display: none;">
+                    <ul class="form-list">
+                        <li class="fields">
+                            <label for="company" class="required"><em>*</em><?php echo $_helper->__('Company') ?></label>
+                            <div class="input-box">
+                                <select type="text" name="company" id="company" title="<?php echo $_helper->__('Company') ?>" data-placeholder="Choose a Country..." class="chzn-select" style="width:350px;" tabindex="2" >
+                                    <?php $companies = $_helper->getDealerCompanies(); ?>
+                                    <?php foreach ($companies as $company): ?>
+                                        <option value="<?php echo $company ?>" <?php if ($_company == $company): ?>selected="selected"<?php endif; ?> ><?php echo $company ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            <?php } ?>
+        </div>
+        <div class="buttons-set">
+            <p class="required"><?php echo $_helper->__('* Required Fields') ?></p>
+            <input type="text" name="hideit" id="hideit" value="" style="display:none !important;" />
+            <button type="submit" title="<?php echo $_helper->__('Submit') ?>" class="button"><span><span><?php echo $_helper->__('Submit') ?></span></span></button>
+        </div>
+
+    </form>
+
+
+    <script type="text/javascript">
+        //<![CDATA[
+        var dealerLocatorSeach = new VarienForm('dealerLocatorSeach', true);
+
+
+        Event.observe(window, 'load', function() {
+
+<?php if ($_isSearchByZipEnabled) { ?>
+                $('search_type_zip').observe('click', function(el) {
+                    hideZip(0);
+                    hideState(1);
+                    hideCompany(1);
+                });
+<?php } ?>
+
+<?php if ($_isSearchByStateEnabled) { ?>
+                $('search_type_state').observe('click', function(el) {
+                    hideZip(1);
+                    hideState(0);
+                    hideCompany(1);
+                });
+<?php } ?>
+
+<?php if ($_isSearchByCompanyEnabled) { ?>
+                $('search_type_company').observe('click', function(el) {
+                    hideZip(1);
+                    hideState(1);
+                    hideCompany(0);
+                });
+<?php } ?>
+        });
+
+        function hideZip(shouldHide)
+        {
+<?php if ($_isSearchByZipEnabled) { ?>hideElement(shouldHide, 'area_searchByZip')<?php } ?>
+        }
+
+        function hideState(shouldHide)
+        {
+<?php if ($_isSearchByStateEnabled) { ?>hideElement(shouldHide, 'area_searchByState')<?php } ?>
+        }
+
+        function hideCompany(shouldHide)
+        {
+<?php if ($_isSearchByCompanyEnabled) { ?>hideElement(shouldHide, 'area_searchByCompany')<?php } ?>
+        }
+
+        function hideElement(shouldHide, elementName)
+        {
+            if (shouldHide) {
+                $(elementName).hide();
+            } else {
+                $(elementName).show();
+            }
+        }
+
+        function hideAll(shouldHide)
+        {
+            hideZip(shouldHide);
+            hideState(shouldHide);
+            hideCompany(shouldHide);
+        }
+
+        hideZip(<?php
+if ($_searchType == $_searchTypeZip) {
+    echo '0';
+} else {
+    echo '1';
+}
+?>);
+        hideState(<?php
+if ($_searchType == $_searchTypeState) {
+    echo '0';
+} else {
+    echo '1';
+}
+?>);
+        hideCompany(<?php
+if ($_searchType == $_searchTypeCompany) {
+    echo '0';
+} else {
+    echo '1';
+}
+?>);
+
+        //]]>
+    </script>
+
+    <?php if (sizeof($_dealers) > 0) { ?>
+        <ul class="switcherTableMap">
+            <li class="button" id="showMap">
+                <button class="action"><span onclick="active(this)" class="label active"><?php echo $_helper->__('Map') ?></span></button>
+            </li>
+            <li class="button" id="showTable">
+                <button class="action"><span onclick="active(this)" class="label"><?php echo $_helper->__('Table') ?></span></button>
+            </li>
+        </ul>
+        <div id="searchResultTableWrapper" style="display: none;">
+            <div class="dealers_search_results">
+                <table class="data-table cart-table">
+                    <colgroup>
+                        <col>
+                        <col>
+                        <col>
+                        <col>
+                        <col>
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th><?php echo $_helper->__('Company') ?></th>
+                            <th><?php echo $_helper->__('Street') ?></th>
+                            <th><?php echo $_helper->__('City') ?></th>
+                            <th><?php echo $_helper->__('Website') ?></th>
+                            <th><?php echo $_helper->__('Phone') ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($_dealers as $dealer): ?>
+                            <tr>
+                                <td><?php echo $dealer->getBillingCompany() ?></td>
+                                <td><?php echo $dealer->getBillingStreet() ?></td>
+                                <td><?php echo $dealer->getBillingCity() ?></td>
+                                <td><a href="http://<?php echo $dealer->getWebsiteUrl() ?>"><?php echo $dealer->getWebsiteUrl() ?></a></td>
+                                <td><?php echo $dealer->getBillingTelephone() ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="searchResultGmapWrapper">
+            <script src="http://maps.google.com/maps/api/js?sensor=false" type="text/javascript"></script>
+            <div id="map" style="width: 100%; height: 460px;"></div>
+
+
+            <?php
+            $locations = array();
+            foreach ($_dealers as $dealer) {
+                $_dealerCompany = $dealer->getBillingCompany();
+                $_dealerStreet = $dealer->getBillingStreet();
+                $_dealerCity = $dealer->getBillingCity();
+                $_dealerPostcode = $dealer->getBillingPostcode();
+                $_dealerTelephone = $dealer->getBillingTelephone();
+                $_dealerWebsiteUrl = $dealer->getWebsiteUrl();
+                $_dealerGeoLatitude = $dealer->getInchooGeoLatitude() ? $dealer->getInchooGeoLatitude() : 0;
+                $_dealerGeoLongitude = $dealer->getInchooGeoLongitude() ? $dealer->getInchooGeoLongitude() : 0;
+
+                $locations[] = array(
+                    sprintf('%s<br />%s<br />%s, %s<br />%s<br /><a href="%s">%s</a>', $_dealerCompany, $_dealerStreet, $_dealerCity, $_dealerPostcode, $_dealerTelephone, 'http://' . $_dealerWebsiteUrl, $_dealerWebsiteUrl
+                    ),
+                    $_dealerGeoLatitude,
+                    $_dealerGeoLongitude
+                );
+            }
+
+            $locations = json_encode($locations);
+            ?>
+
+            <script type="text/javascript">
+            //<![CDATA[
+            var locations = <?php echo $locations; ?>;
+
+            // ---------------------------------------------------------------------------------------
+            var map = new google.maps.Map(document.getElementById('map'), {
+                zoom: <?php echo $_zoom; ?>,
+                center: new google.maps.LatLng(<?php echo $_centerLat; ?>, <?php echo $_centerLon; ?>),
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            });
+
+            var infowindow = new google.maps.InfoWindow();
+
+            var marker, i;
+            var image = '<?php echo $this->getSkinUrl('images/inchoo/dealer/google_maps/marker.png') ?>';
+
+            for (i = 0; i < locations.length; i++) {
+                marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(locations[i][1], locations[i][2]),
+                    map: map,
+                    icon: image
+                });
+
+                google.maps.event.addListener(marker, 'click', (function(marker, i) {
+                    return function() {
+                        infowindow.setContent(locations[i][0]);
+                        infowindow.open(map, marker);
+                    }
+                })(marker, i));
+            }
+
+    <?php if (($_searchType == "zip") && ($_radius > 0)): ?>
+                // Create marker
+                var marker = new google.maps.Marker({
+                    map: map,
+                    visible: false,
+                    position: new google.maps.LatLng(<?php echo $_lat; ?>, <?php echo $_lon; ?>),
+                    title: ''
+                });
+
+                // Add circle overlay and bind to marker
+                var circle = new google.maps.Circle({
+                    map: map,
+                    radius: <?php echo $_round; ?>,
+                    fillColor: '#AA0000'
+                });
+
+                circle.bindTo('center', marker, 'position');
+                map.fitBounds(circle.getBounds());
+
+    <?php endif; ?>
+
+            Event.observe(window, 'load', function() {
+                Event.observe('showTable', 'click', function() {
+                    $('searchResultTableWrapper').show();
+                    $('searchResultGmapWrapper').hide();
+                });
+                Event.observe('showMap', 'click', function() {
+                    $('searchResultGmapWrapper').show();
+                    $('searchResultTableWrapper').hide();
+                });
+                function active(e) {
+                    $$('.active').each(function(i) {
+                        i.removeClassName('active');
+                    });
+                    e.addClassName('active');
+                }
+                ;
+            });
+            // Adding Active class to selected data, map or table
+            function active(e) {
+                $$('.active').each(function(i) {
+                    i.removeClassName('active');
+                });
+                e.addClassName('active');
+            }
+            ;
+            //]]>
+            </script>
+        </div>
+
+
+    </div>
+<?php } ?>
+<script type="text/javascript">
+    //<![CDATA[
+    document.observe('dom:loaded', function(evt) {
+        var select, selects, _i, _len, _results;
+        if (Prototype.Browser.IE && (Prototype.BrowserFeatures['Version'] === 6 || Prototype.BrowserFeatures['Version'] === 7)) {
+            return;
+        }
+        selects = $$(".chzn-select");
+        _results = [];
+        for (_i = 0, _len = selects.length; _i < _len; _i++) {
+            select = selects[_i];
+            _results.push(new Chosen(select));
+        }
+        deselects = $$(".chzn-select-deselect");
+        for (_i = 0, _len = deselects.length; _i < _len; _i++) {
+            select = deselects[_i];
+            _results.push(new Chosen(select, {allow_single_deselect: true}));
+        }
+        return _results;
+    });
+    //]]>
+</script>

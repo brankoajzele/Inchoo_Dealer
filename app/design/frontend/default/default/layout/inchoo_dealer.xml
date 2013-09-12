@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+
+<layout version="0.1.0">
+    <default>
+        <reference name="footer">
+            <block type="inchoo_dealer/locator_box" name="inchoo_dealer_locator_box" template="inchoo/dealer/locator/box.phtml"/>
+        </reference>
+    </default>
+    <inchoo_dealer_locator_search>
+        <reference name="head">
+            <action method="addItem"><type>skin_js</type><name>js/inchoo/dealer/chosen.proto.min.js</name></action>
+            <action method="addItem"><type>skin_css</type><name>css/inchoo/dealer/chosen.css</name></action>
+            <action method="addItem"><type>skin_css</type><name>css/inchoo/dealer/gstyle_buttons.css</name></action>
+        </reference>
+         <reference name="footer">
+            <remove name="inchoo_dealer_locator_box"/>
+        </reference>
+        <reference name="content">
+            <block type="inchoo_dealer/locator_search" name="inchoo_dealer_locator_search" />
+        </reference>
+    </inchoo_dealer_locator_search>
+</layout>

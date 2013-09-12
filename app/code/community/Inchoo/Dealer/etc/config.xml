@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * @category    Inchoo
+ * @package     Inchoo_Dealer
+ * @author      Branko Ajzele <ajzele@gmail.com>
+ * @copyright   Copyright (c) Inchoo
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ */
+-->
+<config>
+    <modules>
+        <Inchoo_Dealer>
+            <version>1.0.0.0</version>
+        </Inchoo_Dealer>
+    </modules>
+    <global>
+        <models>
+            <inchoo_dealer>
+                <class>Inchoo_Dealer_Model</class>
+            </inchoo_dealer>            
+        </models>
+        <blocks>
+            <inchoo_dealer>
+                <class>Inchoo_Dealer_Block</class>
+            </inchoo_dealer>            
+        </blocks>
+        <helpers>
+            <inchoo_dealer>
+                <class>Inchoo_Dealer_Helper</class>
+            </inchoo_dealer>            
+        </helpers>
+        <resources>
+            <inchoo_dealer_setup>
+                <setup>
+                    <module>Inchoo_Dealer</module>
+                </setup>
+            </inchoo_dealer_setup>
+        </resources>
+        <events>
+            <customer_address_save_before>
+                <observers>
+                    <inchoo_dealer_injectLatLongIntoAddress>
+                        <class>inchoo_dealer/observer</class>
+                        <method>injectLatLongIntoAddress</method>
+                    </inchoo_dealer_injectLatLongIntoAddress>
+                </observers>                
+            </customer_address_save_before>             
+        </events>
+    </global>
+    <frontend>        
+        <routers>
+            <inchoo_dealer>
+                <use>standard</use>
+                <args>
+                    <module>Inchoo_Dealer</module>
+                    <frontName>dealer</frontName>
+                </args>
+            </inchoo_dealer>
+        </routers>
+        <layout>
+            <updates>
+                <inchoo_dealer>
+                    <file>inchoo_dealer.xml</file>
+                </inchoo_dealer>
+            </updates>
+        </layout>
+    </frontend>
+    <default>
+        <inchoo_dealer_config>
+            <search>
+                <by_zip><![CDATA[1]]></by_zip>
+                <by_company><![CDATA[1]]></by_company>
+                <by_state><![CDATA[1]]></by_state>
+                <radius_options><![CDATA[100,200,300,500,2000]]></radius_options>
+                <default_radius_option><![CDATA[200]]></default_radius_option>
+                <default_box_search_type><![CDATA[zip]]></default_box_search_type>
+            </search>    
+        </inchoo_dealer_config>
+    </default>
+</config>
